@@ -1,0 +1,7 @@
+azure-functions
+azure-ai-documentintelligence
+azure-core
+azure-storage-blob
+azure-cosmos
+openai
+python-dotenv
