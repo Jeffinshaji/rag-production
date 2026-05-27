@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'function_app' # ← Points directly to your function app subfolder
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'function_app'
   PYTHON_VERSION: '3.11'
 
 jobs:
@@ -31,7 +31,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
 
-      # --- FIXED HERE: Tells GitHub to jump into the subfolder before installing ---
+      # Navigates into the subfolder to compile requirements
       - name: Install dependencies
         run: |
           cd function_app
@@ -51,9 +51,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -66,13 +63,7 @@ jobs:
           unzip release.zip
           rm release.zip
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B5935161676E4019B178D5FB6F9482B8 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DF247E48E9194BAAA82950B73B4697B7 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2F0D17AE69D5412BA68B9982D8A0ABEA }}
-
+      # --- FIXED HERE: Swapped broken OIDC Service Principal login with native Publish Profile ---
       - name: 'Deploy to Azure Functions'
         uses: Azure/functions-action@v1
         id: deploy-to-function
@@ -80,4 +71,4 @@ jobs:
           app-name: 'RAG-Jeff-pipeline'
           slot-name: 'Production'
           package: '.'
-          
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
