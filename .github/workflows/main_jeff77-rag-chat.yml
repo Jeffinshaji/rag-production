@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,7 +18,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Fixes the monorepo layout by jumping straight into the webapp folder
       - name: Install dependencies
         run: |
           cd webapp
@@ -34,6 +32,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -41,9 +42,15 @@ jobs:
         with:
           name: python-app
 
+      # --- FIXED HERE: Authenticates natively using your 54-minute-ago OIDC keys ---
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8EDC16C4A7324E08A7E17CB8B7CB0D43 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_454305B42D5343FDA79DC2F6BC7ECD0C }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6F655A5322D0466F9D252BD08E299714 }}
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
           app-name: 'jeff77-rag-chat'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISH_PROFILE_JEFF77RAGCHAT }}
