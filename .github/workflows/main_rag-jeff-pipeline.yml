@@ -13,6 +13,10 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,11 +26,18 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Targets the dependencies right inside the project root for Flex OneDeploy
       - name: Install dependencies
         run: |
           cd function_app
           pip install -r requirements.txt -t .
+
+      # --- FIXED HERE: Authenticates natively using your 2-days-ago OIDC keys ---
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DB7F7A380B4F44B1A165244DF210D04D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_8BAD23FF16E84385A61FA2739AC22100 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E3187488D78443FF8894A583F39D323A }}
 
       - name: 'Deploy to Azure Functions'
         uses: Azure/functions-action@v1
@@ -36,4 +47,3 @@ jobs:
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           sku: 'flexconsumption'
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
