@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'webapp/**'
 
 jobs:
   deploy:
@@ -13,19 +11,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          cd webapp
-          pip install -r requirements.txt
-
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'jeff77-rag-chat'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./webapp
+
+      - name: Force install streamlit via SCM
+        run: |
+          curl -X POST https://jeff77-rag-chat.scm.azurewebsites.net/api/command \
+            -u "${{ secrets.SCM_CREDENTIALS }}" \
+            -H "Content-Type: application/json" \
+            -d '{"command": "pip install streamlit requests python-dotenv", "dir": "/home/site/wwwroot"}'
